@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Factors and Multiples</title>
+<style>
+  :root {
+    --bg: #f5f6fa; --card: #ffffff; --ink: #1c2333; --muted: #5b6477;
+    --line: #c9d0e0; --accent: #3355d6; --accent-ink: #ffffff;
+    --soft: #eef1fb; --good: #1f7a37; --good-bg: #e4f5e9; --bad: #b42323; --bad-bg: #fdeaea; --info-bg: #dfe7ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151d; --card: #1b2030; --ink: #e8ecf6; --muted: #9aa5bd;
+      --line: #394261; --accent: #7b96ff; --accent-ink: #0d1226;
+      --soft: #232a40; --good: #6fd68b; --good-bg: #1b3326; --bad: #ff8c8c; --bad-bg: #3a1c1c; --info-bg: #2a3558;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 18px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 680px; margin: 0 auto; padding: 20px 16px 48px; }
+  h1 { font-size: 1.5rem; margin: 0 0 12px; }
+  .card { background: var(--card); border-radius: 14px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  .label { margin: 0 0 6px; color: var(--muted); font-size: .95rem; font-weight: 600; }
+  .stmt { font-size: 1.7rem; font-weight: 700; line-height: 1.3; margin: 0 0 18px; }
+  .stmt b { font-size: 2.2rem; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; }
+  button { font: inherit; cursor: pointer; }
+  .btn { border: 2px solid var(--accent); background: transparent; color: var(--accent); border-radius: 10px; padding: 12px 18px; font-weight: 600; font-size: 1.1rem; flex: 1 1 120px; }
+  .btn.cta { background: var(--accent); color: var(--accent-ink); flex: 0 0 auto; }
+  :focus-visible { outline: 3px solid #f08c00; outline-offset: 2px; }
+
+  .banner { margin: 0 0 12px; padding: 8px 12px; border-radius: 10px; font-weight: 700; }
+  .banner.good { background: var(--good-bg); color: var(--good); }
+  .banner.bad { background: var(--bad-bg); color: var(--bad); }
+  .banner.info { background: var(--info-bg); }
+  .how { border: 2px solid var(--line); border-radius: 12px; overflow: hidden; margin-bottom: 14px; }
+  .how > div { padding: 10px 14px; }
+  .how .fact { background: var(--soft); font-size: 1.25rem; font-weight: 800; }
+  .how .fact small { display: block; font-size: .85rem; font-weight: 400; color: var(--muted); }
+  .how .evidence { font-size: 1.05rem; }
+  .how .evidence .list { font-weight: 700; }
+  .how .tip { color: var(--muted); font-size: .9rem; padding-top: 0; }
+  .how .verdict { border-top: 2px solid var(--line); font-weight: 700; font-size: 1.1rem; }
+  .how .verdict.yes { background: var(--good-bg); }
+  .how .verdict.nope { background: var(--bad-bg); }
+  .how .verdict .true-way { display: block; margin-top: 4px; font-weight: 400; font-size: 1rem; }
+  @media (max-width: 480px) { body { font-size: 16px; } main { padding: 12px 8px 32px; } .card { padding: 14px; } .stmt { font-size: 1.4rem; } .stmt b { font-size: 1.9rem; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Factors and Multiples</h1>
+  <div class="card">
+    <p class="label">True or false?</p>
+    <p class="stmt" id="stmt"></p>
+    <div id="area"></div>
+  </div>
+</main>
+
+<script>
+(function () {
+  // Four templates. S is the smaller number and L = S x k is the larger one, so L is always a multiple of S.
+  //  1: S is a factor of L      (true)      3: L is a multiple of S   (true)
+  //  2: L is a factor of S      (false)     4: S is a multiple of L   (false)
+  var S, L, K, T, truth, status, last = '';       // status: 'ask' | 'correct' | 'wrong' | 'shown'
+
+  var $stmt = document.getElementById('stmt'), $area = document.getElementById('area');
+
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function rnd(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+  function factorsOf(n) { var f = []; for (var i = 1; i <= n; i++) if (n % i === 0) f.push(i); return f; }
+
+  function parts(t) {   // [first number, word, second number]
+    return t === 1 ? [S, 'factor', L] : t === 2 ? [L, 'factor', S] : t === 3 ? [L, 'multiple', S] : [S, 'multiple', L];
+  }
+  function statementText(t) { var p = parts(t); return p[0] + ' is a ' + p[1] + ' of ' + p[2]; }
+
+  function next(force) {
+    var s, k, t, text;
+    do {
+      s = rnd(2, 12); k = rnd(2, 12); t = rnd(1, 4);
+      if (force) { s = force.s; k = force.l / force.s; t = force.t; }
+      S = s; K = k; L = s * k; T = t; text = statementText(t);
+    } while (!force && text === last);
+    last = text; truth = T === 1 || T === 3; status = 'ask';
+    render();
+  }
+
+  /* ---------- the explanation ---------- */
+  function howBox() {
+    var box = el('div', 'how');
+    var fact = el('div', 'fact', S + ' × ' + K + ' = ' + L);
+    fact.appendChild(el('small', null, 'This multiplication fact is the key. ' + S + ' and ' + K + ' are the factors, and ' + L + ' is the multiple.'));
+    box.appendChild(fact);
+
+    var ev = el('div', 'evidence'), list = el('span', 'list');
+    if (T === 1) {
+      list.textContent = factorsOf(L).join(', ');
+      ev.appendChild(document.createTextNode('Factors of ' + L + ': ')); ev.appendChild(list);
+      ev.appendChild(document.createTextNode('. ' + S + ' is on the list.'));
+    } else if (T === 2) {
+      list.textContent = factorsOf(S).join(', ');
+      ev.appendChild(document.createTextNode('Factors of ' + S + ': ')); ev.appendChild(list);
+      ev.appendChild(document.createTextNode('. ' + L + ' is not on the list. A factor is never bigger than the number it goes into.'));
+    } else if (T === 3) {
+      var m = []; for (var i = 1; i <= K; i++) m.push(S * i);
+      list.textContent = m.join(', ');
+      ev.appendChild(document.createTextNode('Multiples of ' + S + ': ')); ev.appendChild(list);
+      ev.appendChild(document.createTextNode('. ' + L + ' is on the list.'));
+    } else {
+      list.textContent = [L, L * 2, L * 3].join(', ') + ', …';
+      ev.appendChild(document.createTextNode('Multiples of ' + L + ': ')); ev.appendChild(list);
+      ev.appendChild(document.createTextNode(' ' + S + ' is not on the list. A multiple is never smaller than the number you started with.'));
+    }
+    box.appendChild(ev);
+    box.appendChild(el('div', 'tip', 'Remember: a factor is a number you multiply. A multiple is the answer you get.'));
+
+    var v = el('div', 'verdict ' + (truth ? 'yes' : 'nope'), '“' + statementText(T) + '” is ' + (truth ? 'true' : 'false') + '.');
+    if (!truth) v.appendChild(el('span', 'true-way', 'A true way to say it: ' + statementText(T === 2 ? 1 : 3) + '.'));
+    box.appendChild(v);
+    return box;
+  }
+
+  /* ---------- rendering ---------- */
+  function render() {
+    var p = parts(T);
+    $stmt.innerHTML = '';
+    $stmt.appendChild(el('b', null, p[0])); $stmt.appendChild(document.createTextNode(' is a ' + p[1] + ' of ')); $stmt.appendChild(el('b', null, p[2]));
+    $area.innerHTML = '';
+    if (status === 'ask') {
+      var row = el('div', 'row');
+      [['True', function () { answer(true); }], ['False', function () { answer(false); }], ['Show me', function () { status = 'shown'; render(); }]].forEach(function (b) {
+        var btn = el('button', 'btn', b[0]); btn.addEventListener('click', b[1]); row.appendChild(btn);
+      });
+      $area.appendChild(row); return;
+    }
+    var msg = status === 'correct' ? ['good', '✅ Correct!'] : status === 'wrong' ? ['bad', 'Not quite. Here is how to check it:'] : ['info', 'Here is how to check it:'];
+    $area.appendChild(el('div', 'banner ' + msg[0], msg[1]));
+    $area.appendChild(howBox());
+    var nx = el('button', 'btn cta', 'Next question'); nx.addEventListener('click', function () { next(); });
+    $area.appendChild(nx); nx.focus({ preventScroll: true });
+  }
+
+  function answer(says) { status = says === truth ? 'correct' : 'wrong'; render(); }
+
+  // optional: ?s=2&l=16&t=1 in the URL sets the first question (t = template 1-4; l must be a multiple of s)
+  var P = new URLSearchParams(location.search), qs = parseInt(P.get('s'), 10), ql = parseInt(P.get('l'), 10), qt = parseInt(P.get('t'), 10);
+  next(qs >= 2 && ql > qs && ql % qs === 0 && qt >= 1 && qt <= 4 ? { s: qs, l: ql, t: qt } : null);
+})();
+</script>
+</body>
+</html>
